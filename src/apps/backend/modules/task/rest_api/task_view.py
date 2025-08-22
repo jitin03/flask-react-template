@@ -30,11 +30,10 @@ class TaskView(MethodView):
         if not request_data.get("title"):
             raise TaskBadRequestError("Title is required")
 
-        if not request_data.get("description"):
-            raise TaskBadRequestError("Description is required")
-
         create_task_params = CreateTaskParams(
-            account_id=account_id, title=request_data["title"], description=request_data["description"]
+            account_id=account_id, 
+            title=request_data["title"], 
+            description=request_data.get("description", "")
         )
 
         created_task = TaskService.create_task(params=create_task_params)
