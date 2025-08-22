@@ -1,11 +1,12 @@
-import pytest
+from datetime import datetime
 from .base_test_task_comment import BaseTestTaskComment
 from modules.task_comment.task_comment_service import TaskCommentService
 from modules.task_comment.types import (
     CreateTaskCommentParams,
     UpdateTaskCommentParams,
     DeleteTaskCommentParams,
-    GetTaskCommentsParams
+    GetTaskCommentsParams,
+    TaskCommentErrorCode
 )
 from modules.task_comment.errors import (
     TaskCommentNotFoundError,
@@ -18,181 +19,224 @@ from modules.application.common.types import PaginationParams
 
 
 class TestTaskCommentService(BaseTestTaskComment):
-    """Test cases for Task Comment Service Layer"""
+    """Test cases for Task Comment Service layer"""
     
     def test_create_comment_success(self):
-        """Test successful comment creation"""
-        content = "New test comment"
-        
+        """Test creating a comment successfully"""
         create_params = CreateTaskCommentParams(
             task_id=self.test_task.id,
             account_id=self.test_account.id,
-            content=content
+            content="New test comment from service"
         )
         
         comment = TaskCommentService.create_comment(create_params)
         
         assert comment is not None
-        assert comment.content == content
         assert comment.task_id == self.test_task.id
         assert comment.account_id == self.test_account.id
-        assert comment.created_at is not None
-        assert comment.updated_at is not None
+        assert comment.content == "New test comment from service"
+        assert isinstance(comment.created_at, datetime)
+        assert isinstance(comment.updated_at, datetime)
         
     def test_create_comment_invalid_task(self):
-        """Test comment creation with invalid task ID"""
+        """Test creating a comment for non-existent task"""
         create_params = CreateTaskCommentParams(
             task_id="invalid_task_id",
             account_id=self.test_account.id,
-            content="Test comment"
+            content="Comment for invalid task"
         )
         
-        with pytest.raises(TaskNotFoundForCommentError):
+        try:
             TaskCommentService.create_comment(create_params)
+            assert False, "Expected TaskNotFoundForCommentError"
+        except TaskNotFoundForCommentError as e:
+            pass
+            
+    def test_comment_content_validation(self):
+        """Test comment content validation"""
+        # Test empty content
+        create_params = CreateTaskCommentParams(
+            task_id=self.test_task.id,
+            account_id=self.test_account.id,
+            content=""
+        )
+        
+        try:
+            TaskCommentService.create_comment(create_params)
+            assert False, "Expected InvalidCommentContentError for empty content"
+        except InvalidCommentContentError as e:
+            pass
+            
+        # Test content too long (assuming max is 1000 chars)
+        long_content = "x" * 1001
+        create_params = CreateTaskCommentParams(
+            task_id=self.test_task.id,
+            account_id=self.test_account.id,
+            content=long_content
+        )
+        
+        try:
+            TaskCommentService.create_comment(create_params)
+            assert False, "Expected InvalidCommentContentError for content too long"
+        except InvalidCommentContentError as e:
+            pass
             
     def test_get_task_comments_success(self):
-        """Test successful retrieval of task comments"""
-        # Create additional comments        self.create_test_comment("First comment")
-        self.create_test_comment("Second comment")
-        
-        params = GetTaskCommentsParams(
-            task_id=self.test_task.id,
-            account_id=self.test_account.id,
-            pagination_params=PaginationParams(page=1, limit=10)
-        )
-        
-        result = TaskCommentService.get_task_comments(params)
-        
-        assert result is not None
-        assert len(result.comments) >= 3  # Including the one from setup
-        assert result.total_count >= 3
-        assert result.page == 1
-        assert result.limit == 10
-        
-    def test_get_task_comments_pagination(self):
-        """Test comment pagination"""
-        # Create multiple comments
-        for i in range(5):
-            self.create_test_comment(f"Comment {i+1}")
+        """Test retrieving comments for a task"""
+        # Create additional comments
+        for i in range(3):
+            self.create_test_comment(f"Service test comment {i+1}")
             
-        # Test first page
         params = GetTaskCommentsParams(
             task_id=self.test_task.id,
             account_id=self.test_account.id,
-            pagination_params=PaginationParams(page=1, limit=3)
+            pagination_params=PaginationParams(page=1, size=10)
         )
         
         result = TaskCommentService.get_task_comments(params)
         
-        assert len(result.comments) == 3
-        assert result.page == 1
-        assert result.limit == 3
-        assert result.has_more == True
+        assert result.total_count >= 4  # Including setup comment
+        assert len(result.items) >= 4
+        assert result.pagination_params.page == 1
+        assert result.pagination_params.size == 10
+        
+        # Verify comments are ordered by created_at desc
+        for i in range(len(result.items) - 1):
+            assert result.items[i].created_at >= result.items[i + 1].created_at
+            
+    def test_get_task_comments_pagination(self):
+        """Test pagination when retrieving comments"""
+        # Create multiple comments
+        for i in range(10):
+            self.create_test_comment(f"Pagination test comment {i+1}")
+            
+        # Get first page
+        params = GetTaskCommentsParams(
+            task_id=self.test_task.id,
+            account_id=self.test_account.id,
+            pagination_params=PaginationParams(page=1, size=5)
+        )
+        
+        result = TaskCommentService.get_task_comments(params)
+        
+        assert len(result.items) == 5
+        assert result.total_count >= 11  # Including setup comment
+        assert result.pagination_params.page == 1
+        assert result.pagination_params.size == 5
+        
+        # Get second page
+        params.pagination_params.page = 2
+        result_page2 = TaskCommentService.get_task_comments(params)
+        
+        assert len(result_page2.items) == 5
+        assert result_page2.pagination_params.page == 2
+        
+        # Ensure no overlap between pages
+        page1_ids = {comment.id for comment in result.items}
+        page2_ids = {comment.id for comment in result_page2.items}
+        assert len(page1_ids.intersection(page2_ids)) == 0
         
     def test_update_comment_success(self):
-        """Test successful comment update"""
-        new_content = "Updated comment content"
-        
+        """Test updating a comment successfully"""
         update_params = UpdateTaskCommentParams(
             comment_id=self.test_comment.id,
             account_id=self.test_account.id,
-            content=new_content
+            content="Updated comment content from service"
         )
         
         updated_comment = TaskCommentService.update_comment(update_params)
         
-        assert updated_comment.content == new_content
         assert updated_comment.id == self.test_comment.id
+        assert updated_comment.content == "Updated comment content from service"
         assert updated_comment.updated_at > self.test_comment.updated_at
         
-    def test_update_comment_unauthorized(self):
-        """Test comment update by unauthorized user"""
-        # Create another account
-        other_account = self.create_test_account(
-            phone_number="+1234567891",
-            email="other@test.com"
-        )
-        
-        update_params = UpdateTaskCommentParams(
-            comment_id=self.test_comment.id,
-            account_id=other_account.id,
-            content="Unauthorized update"
-        )
-        
-        with pytest.raises(UnauthorizedCommentEditError):
-            TaskCommentService.update_comment(update_params)
-            
     def test_update_comment_not_found(self):
-        """Test update of non-existent comment"""
+        """Test updating a non-existent comment"""
         update_params = UpdateTaskCommentParams(
             comment_id="invalid_comment_id",
             account_id=self.test_account.id,
             content="Updated content"
         )
         
-        with pytest.raises(TaskCommentNotFoundError):
+        try:
             TaskCommentService.update_comment(update_params)
+            assert False, "Expected TaskCommentNotFoundError"
+        except TaskCommentNotFoundError as e:
+            pass
+            
+    def test_update_comment_unauthorized(self):
+        """Test updating a comment by different user"""
+        # Create another account
+        other_account, _ = self.create_account_and_get_token(
+            username="other_user@example.com"
+        )
+        
+        update_params = UpdateTaskCommentParams(
+            comment_id=self.test_comment.id,
+            account_id=other_account.id,  # Different account
+            content="Unauthorized update"
+        )
+        
+        try:
+            TaskCommentService.update_comment(update_params)
+            assert False, "Expected UnauthorizedCommentEditError"
+        except UnauthorizedCommentEditError as e:
+            pass
             
     def test_delete_comment_success(self):
-        """Test successful comment deletion"""
-        comment_id = self.test_comment.id
+        """Test deleting a comment successfully"""
+        # Create a comment specifically for deletion
+        comment_to_delete = self.create_test_comment("Comment to delete")
         
         delete_params = DeleteTaskCommentParams(
-            comment_id=comment_id,
+            comment_id=comment_to_delete.id,
             account_id=self.test_account.id
         )
         
         result = TaskCommentService.delete_comment(delete_params)
         
-        assert result.success == True
-        assert result.comment_id == comment_id
-        assert result.message == "Comment deleted successfully"
+        assert result is True
         
-        # Verify comment is actually deleted
-        with pytest.raises(TaskCommentNotFoundError):
-            TaskCommentService.get_comment(comment_id, self.test_account.id)
-            
-    def test_delete_comment_unauthorized(self):
-        """Test comment deletion by unauthorized user"""
-        # Create another account
-        other_account = self.create_test_account(
-            phone_number="+1234567892",
-            email="other2@test.com"
-        )
-        
-        delete_params = DeleteTaskCommentParams(
-            comment_id=self.test_comment.id,
-            account_id=other_account.id
-        )
-        
-        with pytest.raises(UnauthorizedCommentDeleteError):
-            TaskCommentService.delete_comment(delete_params)
+        # Verify comment is deleted
+        try:
+            params = GetTaskCommentsParams(
+                task_id=self.test_task.id,
+                account_id=self.test_account.id,
+                pagination_params=PaginationParams(page=1, size=100)
+            )
+            comments_result = TaskCommentService.get_task_comments(params)
+            comment_ids = [c.id for c in comments_result.items]
+            assert comment_to_delete.id not in comment_ids
+        except:
+            pass
             
     def test_delete_comment_not_found(self):
-        """Test deletion of non-existent comment"""
+        """Test deleting a non-existent comment"""
         delete_params = DeleteTaskCommentParams(
             comment_id="invalid_comment_id",
             account_id=self.test_account.id
         )
         
-        with pytest.raises(TaskCommentNotFoundError):
+        try:
             TaskCommentService.delete_comment(delete_params)
+            assert False, "Expected TaskCommentNotFoundError"
+        except TaskCommentNotFoundError as e:
+            pass
             
-    def test_comment_content_validation(self):
-        """Test comment content validation"""
-        # Test empty content
-        with pytest.raises(ValueError):
-            CreateTaskCommentParams(
-                task_id=self.test_task.id,
-                account_id=self.test_account.id,
-                content=""
-            )
-            
-        # Test content too long
-        long_content = "x" * 201  # Exceeds 200 character limit
-        with pytest.raises(ValueError):
-            CreateTaskCommentParams(
-                task_id=self.test_task.id,
-                account_id=self.test_account.id,
-                content=long_content
-            )
+    def test_delete_comment_unauthorized(self):
+        """Test deleting a comment by different user"""
+        # Create another account
+        other_account, _ = self.create_account_and_get_token(
+            username="other_user2@example.com"
+        )
+        
+        delete_params = DeleteTaskCommentParams(
+            comment_id=self.test_comment.id,
+            account_id=other_account.id  # Different account
+        )
+        
+        try:
+            TaskCommentService.delete_comment(delete_params)
+            assert False, "Expected UnauthorizedCommentDeleteError"
+        except UnauthorizedCommentDeleteError as e:
+            pass

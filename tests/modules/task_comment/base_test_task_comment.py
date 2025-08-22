@@ -1,7 +1,5 @@
-import pytest
 from datetime import datetime
 from tests.modules.task.base_test_task import BaseTestTask
-from tests.modules.account.base_test_account import BaseTestAccount
 from modules.task_comment.types import (
     CreateTaskCommentParams,
     UpdateTaskCommentParams,
@@ -10,16 +8,30 @@ from modules.task_comment.types import (
     TaskCommentFilters
 )
 from modules.task_comment.task_comment_service import TaskCommentService
+from modules.task_comment.internal.store.task_comments import TaskCommentRepository
+from modules.task_comment.rest_api.task_comment_rest_api_server import TaskCommentRestApiServer
 from modules.application.common.types import PaginationParams
 
 
-class BaseTestTaskComment(BaseTestTask, BaseTestAccount):
+class BaseTestTaskComment(BaseTestTask):
     """Base test class for task comment functionality"""
     
-    @pytest.fixture(autouse=True)
-    def setup_comment_test_data(self):
+    def setUp(self) -> None:
         """Set up test data for task comment tests"""
-        super().setup_task_test_data()
+        super().setUp()
+        
+        # Create task comment REST API server
+        TaskCommentRestApiServer.create()
+        
+        # Create test account and token
+        self.test_account, self.test_token = self.create_account_and_get_token()
+        
+        # Create test task
+        self.test_task = self.create_test_task(
+            account_id=self.test_account.id,
+            title="Test Task for Comments",
+            description="This is a test task for comment testing"
+        )
         
         # Create a test comment
         self.test_comment_content = "This is a test comment for the task"
@@ -33,6 +45,11 @@ class BaseTestTaskComment(BaseTestTask, BaseTestAccount):
         )
         
         self.test_comment = TaskCommentService.create_comment(create_params)
+        
+    def tearDown(self) -> None:
+        """Clean up test data"""
+        TaskCommentRepository.collection().delete_many({})
+        super().tearDown()
         
     def create_test_comment(self, content: str = None, task_id: str = None, account_id: str = None):
         """Helper method to create a test comment"""
@@ -60,3 +77,11 @@ class BaseTestTaskComment(BaseTestTask, BaseTestAccount):
         )
         
         return TaskCommentService.get_task_comments(params)
+        
+    # URL HELPER METHODS
+    
+    def get_task_comments_api_url(self, account_id: str, task_id: str) -> str:
+        return f"http://127.0.0.1:8080/api/tasks/{task_id}/comments"
+    
+    def get_task_comment_by_id_api_url(self, account_id: str, task_id: str, comment_id: str) -> str:
+        return f"http://127.0.0.1:8080/api/tasks/{task_id}/comments/{comment_id}"
