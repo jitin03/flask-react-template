@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
+
 from modules.application.common.types import PaginationParams, PaginationResult, SortParams
 
 
@@ -58,3 +59,4 @@ class TaskDeletionResult:
 class TaskErrorCode:
     NOT_FOUND: str = "TASK_ERR_01"
     BAD_REQUEST: str = "TASK_ERR_02"
+

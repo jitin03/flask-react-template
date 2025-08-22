@@ -22,7 +22,7 @@
 
   /* General Utility for Custom Form Inputs */
   .form-input {
-    @apply px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary;
+    @apply px-4 py-2 border border-stroke rounded-md focus:ring-primary focus:border-primary;
   }
 
   /* Specific Height Utilities */
