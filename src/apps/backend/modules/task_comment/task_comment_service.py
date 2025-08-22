@@ -88,7 +88,7 @@ class TaskCommentService:
         
         # Check authorization
         if comment.account_id != params.account_id:
-            Logger.warning(
+            Logger.warn(
                 message=f"Unauthorized edit attempt on comment {params.comment_id} "
                 f"by user {params.account_id}"
             )
@@ -127,7 +127,7 @@ class TaskCommentService:
         if comment.account_id != params.account_id:
             # Here you could check if the user is an admin
             # For now, only comment owners can delete
-            Logger.warning(
+            Logger.warn(
                 message=f"Unauthorized delete attempt on comment {params.comment_id} "
                 f"by user {params.account_id}"
             )
