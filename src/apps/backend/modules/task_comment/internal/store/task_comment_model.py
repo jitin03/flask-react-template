@@ -10,7 +10,7 @@ from modules.application.base_model import BaseModel
 @dataclass
 class TaskCommentModel(BaseModel):
     """MongoDB model for task comments"""
-    
+
     task_id: str
     account_id: str
     content: str
@@ -34,7 +34,7 @@ class TaskCommentModel(BaseModel):
     def get_collection_name() -> str:
         """Get the MongoDB collection name"""
         return "task_comments"
-    
+
     def to_domain_model(self) -> dict:
         """Convert to domain model (for use with Pydantic types)"""
         return {

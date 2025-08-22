@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { useAccountContext } from 'frontend/contexts';
-import { DashboardPage } from 'frontend/components/dashboard';
+import { TasksPage } from 'frontend/components/tasks';
 
-const Dashboard: React.FC = () => {
+const Tasks: React.FC = () => {
   const { accountDetails, isAccountLoading } = useAccountContext();
 
   if (isAccountLoading || !accountDetails) {
@@ -13,7 +13,7 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  return <DashboardPage accountId={accountDetails.id} />;
+  return <TasksPage accountId={accountDetails.id} />;
 };
 
-export default Dashboard;
+export default Tasks;
