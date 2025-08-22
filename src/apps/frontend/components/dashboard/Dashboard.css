@@ -1,0 +1,223 @@
+.dashboard-page {
+  padding: 2rem;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.dashboard-header {
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 1rem;
+}
+
+.dashboard-header h1 {
+  margin: 0 0 0.5rem 0;
+  color: #212529;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.tasks-summary {
+  margin: 0;
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.dashboard-section {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.section-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+  background-color: #fff;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #212529;
+}
+
+.tasks-table-container {
+  overflow-x: auto;
+}
+
+.tasks-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.tasks-table th {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+  white-space: nowrap;
+}
+
+.tasks-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: top;
+}
+
+.tasks-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.title-cell {
+  font-weight: 500;
+  color: #212529;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.description-cell {
+  color: #6c757d;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-badge, .priority-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-badge.status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.status-in-progress {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-badge.status-completed {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-badge.status-cancelled {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.priority-badge.priority-low {
+  background-color: #e2e3e5;
+  color: #495057;
+}
+
+.priority-badge.priority-medium {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.priority-badge.priority-high {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.task-created {
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+.table-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem;
+  color: #6c757d;
+}
+
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #e9ecef;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+}
+
+.empty-state h3 {
+  margin: 0 0 0.5rem 0;
+  color: #495057;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+.error-state {
+  text-align: center;
+  padding: 3rem;
+  color: #dc3545;
+}
+
+.error-state h3 {
+  margin: 0 0 0.5rem 0;
+}
+
+.error-state p {
+  margin: 0;
+  color: #6c757d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-page {
+    padding: 1rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .tasks-table {
+    font-size: 0.8rem;
+  }
+  
+  .tasks-table th,
+  .tasks-table td {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .title-cell,
+  .description-cell {
+    max-width: 150px;
+  }
+}

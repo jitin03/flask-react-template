@@ -18,7 +18,11 @@ def access_auth_middleware(next_func: Callable) -> Callable:
         if not auth_header:
             raise AuthorizationHeaderNotFoundError("Authorization header is missing.")
 
-        auth_scheme, auth_token = auth_header.split(" ")
+        try:
+            auth_scheme, auth_token = auth_header.split(" ", 1)
+        except ValueError:
+            raise InvalidAuthorizationHeaderError("Invalid authorization header format. Expected 'Bearer <token>'.")
+
         if auth_scheme != "Bearer" or not auth_token:
             raise InvalidAuthorizationHeaderError("Invalid authorization header.")
 
